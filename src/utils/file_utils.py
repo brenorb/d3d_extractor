@@ -4,6 +4,8 @@ from pathlib import Path
 
 import fitz  # pymupdf
 
+from src.utils.medical_terms import medical_terms
+
 
 def get_pdf_page_count(pdf_path: str) -> int:
     """
@@ -132,3 +134,25 @@ def split_pdf_and_get_first_page(pdf_path: str, output_dir: str | None = None) -
         raise Exception("PDF splitting resulted in no pages")
     
     return created_files[0]
+
+
+def find_medical_terms(document_text: str) -> list[str]:
+    """
+    Finds which medical terms are present in the document text.
+
+    Args:
+        document_text: The text content of a medical document.
+
+    Returns:
+        A list of unique medical terms (canonical names) found in the text.
+    """
+    found_terms = set()
+    lower_document_text = document_text.lower()
+
+    for canonical_name, synonyms in medical_terms.items():
+        for synonym in synonyms:
+            if synonym.lower() in lower_document_text:
+                found_terms.add(synonym)
+                break  # Move to the next canonical term once a synonym is found
+
+    return sorted(list(found_terms))
