@@ -9,7 +9,7 @@ load_dotenv()
 
 
 class LabDataExtractor:
-    def __init__(self, model="openrouter/deepseek/deepseek-r1-0528-qwen3-8b:free"):
+    def __init__(self, model="openrouter/deepseek/deepseek-r1-0528-qwen3-8b"):
         self.lm = dspy.LM(
             model=model,
             api_base="https://openrouter.ai/api/v1",
