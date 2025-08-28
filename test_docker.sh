@@ -53,7 +53,7 @@ fi
 
 # Wait for container to be ready
 echo "⏳ Waiting for container to be ready..."
-sleep 10
+sleep 20
 
 # Test health endpoint
 echo ""
