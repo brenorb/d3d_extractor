@@ -78,7 +78,7 @@ async def process_lab_results(file: UploadFile = File(...)):
     Returns extracted medical data in JSON format
     """
     start_time = time.time()
-    temp_files = []
+    workspace = None
     
     try:
         # Validate file type
@@ -90,19 +90,17 @@ async def process_lab_results(file: UploadFile = File(...)):
         
         logger.info(f"Processing file: {file.filename}")
         
-        # Create temporary file for uploaded PDF
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
-            content = await file.read()
-            temp_file.write(content)
-            temp_path = temp_file.name
-            temp_files.append(temp_path)
+        # Keep the upload and all split pages in a single request workspace.
+        workspace = tempfile.TemporaryDirectory(prefix="d3d-upload-")
+        temp_path = os.path.join(workspace.name, "upload.pdf")
+        with open(temp_path, "wb") as temp_file:
+            temp_file.write(await file.read())
         
         logger.info(f"Saved uploaded file to: {temp_path}")
         
         # Split PDF into pages
         logger.info("Splitting PDF into pages...")
         pages = split_pdf_into_pages(temp_path)
-        temp_files.extend(pages)  # Track page files for cleanup
         logger.info(f"PDF split into {len(pages)} pages")
         
         # Process each page with OCR
@@ -156,13 +154,11 @@ async def process_lab_results(file: UploadFile = File(...)):
         )
     
     finally:
-        # Cleanup temporary files
-        for temp_file in temp_files:
+        if workspace is not None:
             try:
-                if os.path.exists(temp_file):
-                    os.unlink(temp_file)
-            except Exception as e:
-                logger.warning(f"Failed to cleanup temp file {temp_file}: {e}")
+                workspace.cleanup()
+            except OSError as error:
+                logger.warning("Failed to clean the upload workspace: %s", error)
 
 
 @app.post("/batch-process", response_model=List[ProcessingResult])
